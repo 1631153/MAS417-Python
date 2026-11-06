@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Submit Ticket</title>
+    <!-- CSS here to make it look better recommended by Gemini -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 40px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        h1 {
+            margin-top: 0;
+            color: #1f2937;
+            font-size: 24px;
+            margin-bottom: 24px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #4b5563;
+            font-size: 14px;
+        }
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            background-color: #fff;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        textarea {
+            resize: vertical;
+            height: 120px;
+        }
+        button[type="submit"] {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+        button[type="submit"]:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Submit New Ticket</h1>
+
+        <form id="ticketForm">
+            <div class="form-group">
+                <p>Name</p>
+                <input type="text" id="name" required>
+            </div>
+
+            <div class="form-group">
+                <p>Swing period (seconds):</p>
+                <input type="number" step="0.01" id="swing_period" min="0.1" value="1.0" required>
+            </div>
+
+            <div class="form-group">
+                <p>Largest allowed size (mm):</p>
+                <input type="number" id="max_size" min="10" value="200" required>
+            </div>
+
+            <div class="form-group">
+                <p>Axle diameter (mm):</p>
+                <input type="number" step="0.1" id="axle_diameter" min="1" value="5" required>
+            </div>
+
+            <div class="form-group">
+                <p>Axle diameter (mm):</p>
+                <input type="number" step="0.1" id="axle_diameter" min="1" value="5" required>
+            </div>
+
+            <div class="form-group">
+                <p>Infill percentage:</p>
+                <input type="number" id="infill" min="0" max="100" value="20" required>
+            </div>
+
+            <div class="form-group">
+                <p>Number of walls:</p>
+                <input type="number" id="walls" min="1" max="10" value="2" required>
+            </div>
+
+            <div class="form-group">
+                <p>Filament for the Base:</p>
+                <select id="filament_base" >
+                    <option value="">Select a filament...</option>
+                    {% for filament in filaments %}
+                        <option value="{{ filament.id }}">{{ filament.name }} ({{ filament.material }} - {{ filament.color_name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <p>Filament for the Side Supports:</p>
+                <select id="filament_stands" >
+                    <option value="">Select a filament...</option>
+                    {% for filament in filaments %}
+                        <option value="{{ filament.id }}">{{ filament.name }} ({{ filament.material }} - {{ filament.color_name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <p>Filament for the Pendulum Arm:</p>
+                <select id="filament_arm" >
+                    <option value="">Select a filament...</option>
+                    {% for filament in filaments %}
+                        <option value="{{ filament.id }}">{{ filament.name }} ({{ filament.material }} - {{ filament.color_name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <p>Filament for the Weight:</p>
+                <select id="filament_weight" >
+                   <option value="">Select a filament...</option>
+                    {% for filament in filaments %}
+                        <option value="{{ filament.id }}">{{ filament.name }} ({{ filament.material }} - {{ filament.color_name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <p>Filament for the Axle:</p>
+                <select id="filament_axle" >
+                    <option value="">Select a filament...</option>
+                    {% for filament in filaments %}
+                        <option value="{{ filament.id }}">{{ filament.name }} ({{ filament.material }} - {{ filament.color_name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit">Submit Ticket</button>
+        </form>
+    </div>
+
+    <script>
+    document.getElementById("ticketForm").addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const data = {
+                name: document.getElementById("name").value,
+                swing_period: parseFloat(document.getElementById("swing_period").value),
+                max_size: parseFloat(document.getElementById("max_size").value),
+                axle_diameter: parseFloat(document.getElementById("axle_diameter").value),
+                infill: parseInt(document.getElementById("infill").value),
+                walls: parseInt(document.getElementById("walls").value),
+                filament_base: parseInt(document.getElementById("filament_base").value),
+                filament_stands: parseInt(document.getElementById("filament_stands").value),
+                filament_arm: parseInt(document.getElementById("filament_arm").value),
+                filament_weight: parseInt(document.getElementById("filament_weight").value),
+                filament_axle: parseInt(document.getElementById("filament_axle").value),
+                creation_date: new Date().toISOString()
+            };
+
+        const response = await fetch("/tickets", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            window.location.href = "/";
+        } else {
+            const errorData = await response.json();
+            alert("Error al crear la orden: " + (errorData.message || errorData.error || "Error desconocido"));
+        }
+    });
+    </script>
+</body>
+</html>

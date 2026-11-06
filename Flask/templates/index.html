@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Orders Management</title>
+    <!-- CSS here to make it look better recommended by Gemini -->
+        <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 40px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        h1 {
+            margin-top: 0;
+            color: #1f2937;
+            font-size: 24px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+        th {
+            background-color: #f9fafb;
+            color: #4b5563;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f9fafb;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-high { background-color: #fee2e2; color: #b91c1c; }
+        .badge-medium { background-color: #fef3c7; color: #b45309; }
+        .badge-low { background-color: #d1fae5; color: #047857; }
+        .empty {
+            text-align: center;
+            color: #6b7280;
+            padding: 24px;
+        }
+    </style>
+</head>
+
+<body>
+    <img src="/static/uia-logo.png" width="200" height="83">
+    <br><br>
+    <div class="container">
+        <h1>Order List</h1>
+        <table>
+            <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Creation Date</th>
+            </tr>
+
+            {% for ticket in tickets %}
+            <tr>
+                <td>#{{ ticket.id }}</td>
+                <td>{{ ticket.name }}</td>
+                <td>
+                    <span class="badge 
+                        {% if ticket.status == 'closed' %} badge-high 
+                        {% elif ticket.status == 'medium' %} badge-medium 
+                        {% else %} badge-low {% endif %}">
+                        {{ ticket.status }}
+                    </span>
+                </td>
+                <td>{{ ticket.creation_date }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="empty">There are no tickets to display.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>
