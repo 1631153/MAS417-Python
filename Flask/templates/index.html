@@ -1,9 +1,11 @@
+<!-- Lateral Panel based on: https://www.w3schools.com/howto/howto_js_collapse_sidepanel.asp-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <title>Orders Management</title>
     <!-- CSS here to make it look better recommended by Gemini -->
-        <style>
+    <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f6f9;
@@ -41,7 +43,7 @@
             font-weight: bold;
         }
         tr:hover {
-            background-color: #f9fafb;
+            background-color: #f1f5f9;
         }
         .badge {
             padding: 4px 8px;
@@ -58,14 +60,89 @@
             color: #6b7280;
             padding: 24px;
         }
+        .btn {
+            display: inline-block;
+            padding: 6px 12px;
+            background-color: #0078d4;
+            color: white;
+            text-decoration: none;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background-color: #005a9e;
+        }
+        .Lateral-popUp {
+            position: fixed;
+            top: 0;
+            right: -480px;
+            width: 440px;
+            max-width: 90%;
+            height: 100vh;
+            background: #ffffff;
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.15);
+            padding: 24px;
+            box-sizing: border-box;
+            transition: right 0.3s ease-in-out;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .Lateral-popUp.active {
+            right: 0;
+        }
+        .header-popUp {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+        }
+        .btn-close {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-close:hover {
+            background: #dc2626;
+        }
+        .group-details {
+            margin-bottom: 14px;
+        }
+        .tag-data {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #6b7280;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .value {
+            font-size: 14px;
+            color: #1f2937;
+            background: #f9fafb;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            margin: 0;
+        }
     </style>
 </head>
-
 <body>
+<div class="Principal-container">
+
     <img src="/static/uia-logo.png" width="200" height="83">
     <br><br>
     <div class="container">
         <h1>Order List</h1>
+        <div style="text-align: right;">    
+            <a href="/ticket_form" class="btn">Create Ticket</a>
+        </div>
+        <br><br>
         <table>
             <tr>
                 <th>Order ID</th>
@@ -75,7 +152,22 @@
             </tr>
 
             {% for ticket in tickets %}
-            <tr>
+            <tr onclick="seeTicket(this)" style="cursor: pointer;"
+                data-id="{{ ticket.id }}"
+                data-name="{{ ticket.name }}"
+                data-swing-period="{{ ticket.swing_period }}"
+                data-max-size="{{ ticket.max_size }}"
+                data-axle-diameter="{{ ticket.axle_diameter }}"
+                data-infill="{{ ticket.infill }}"
+                data-walls="{{ ticket.walls }}"
+                data-filament-base="{{ ticket.filament_base or 'N/A' }}"
+                data-filament-stands="{{ ticket.filament_stands or 'N/A' }}"
+                data-filament-arm="{{ ticket.filament_arm or 'N/A' }}"
+                data-filament-weight="{{ ticket.filament_weight or 'N/A' }}"
+                data-filament-axle="{{ ticket.filament_axle or 'N/A' }}"
+                data-creation-date="{{ ticket.creation_date or 'N/A' }}"
+                data-status="{{ ticket.status }}">
+                
                 <td>#{{ ticket.id }}</td>
                 <td>{{ ticket.name }}</td>
                 <td>
@@ -95,5 +187,111 @@
             {% endfor %}
         </table>
     </div>
+</div>
+
+<div id="Detailed-ticket" class="Lateral-popUp">
+    <div class="header-popUp">
+        <h3 style="margin: 0;">Details <span id="view-id"></span></h3>
+        <button type="button" class="btn-close" onclick="closeTicket()">Close</button>
+    </div>
+
+    <div class="group-details">
+        <span class="tag-data">Customer / Name</span>
+        <p class="value" id="view-customer"></p>
+    </div>
+
+    <div class="group-details">
+        <span class="tag-data">Status</span>
+        <p class="value" id="view-status"></p>
+    </div>
+
+    <div class="group-details">
+        <span class="tag-data">Creation Date</span>
+        <p class="value" id="view-date"></p>
+    </div>
+
+    <div class="group-details">
+        <span class="tag-data">Swing Period</span>
+        <p class="value" id="view-swing"></p>
+    </div>
+
+    <div class="group-details">
+        <span class="tag-data">Max Size</span>
+        <p class="value" id="view-max"></p>
+    </div>
+
+    <div class="group-details">
+        <span class="tag-data">Axle Diameter</span>
+        <p class="value" id="view-axle"></p>
+    </div>
+
+    <div class="group-details">
+        <span class="tag-data">Infill / Walls</span>
+        <p class="value"><span id="view-infill"></span>% — <span id="view-walls"></span> walls</p>
+    </div>
+
+    <div class="group-details">
+        <span class="tag-data">Filaments (Base / Stands / Arm / Weight / Axle)</span>
+        <p class="value">
+            Base: <span id="view-fbase"></span> | 
+            Stands: <span id="view-fstands"></span> | 
+            Arm: <span id="view-farm"></span> | 
+            Weight: <span id="view-fweight"></span> | 
+            Axle: <span id="view-faxle"></span>
+        </p>
+    </div>
+
+    <div class="group-details">
+        <span class="tag-data">Ticket Video</span>
+        <video id="view-video" width="100%" style="border-radius: 6px;" loop autoplay muted playsinline>
+            <source id="view-video-source" src="" type="video/mp4">
+            <!-- <source id="view-video-source" src="" type="video/webm"> -->
+            Not supported in this browser.
+        </video>
+    </div>
+</div>
+
+<script>
+    function seeTicket(elementoFila) {
+        const ticketId = elementoFila.dataset.id;
+
+        document.getElementById('view-id').textContent = "#" + elementoFila.dataset.id;
+        document.getElementById('view-customer').textContent = elementoFila.dataset.name;
+        document.getElementById('view-status').textContent = elementoFila.dataset.status;
+        document.getElementById('view-date').textContent = elementoFila.dataset.creationDate;
+        document.getElementById('view-swing').textContent = elementoFila.dataset.swingPeriod;
+        document.getElementById('view-max').textContent = elementoFila.dataset.maxSize;
+        document.getElementById('view-axle').textContent = elementoFila.dataset.axleDiameter;
+        document.getElementById('view-infill').textContent = elementoFila.dataset.infill;
+        document.getElementById('view-walls').textContent = elementoFila.dataset.walls;
+        document.getElementById('view-fbase').textContent = elementoFila.dataset.filamentBase;
+        document.getElementById('view-fstands').textContent = elementoFila.dataset.filamentStands;
+        document.getElementById('view-farm').textContent = elementoFila.dataset.filamentArm;
+        document.getElementById('view-fweight').textContent = elementoFila.dataset.filamentWeight;
+        document.getElementById('view-faxle').textContent = elementoFila.dataset.filamentAxle;
+
+        const videoPlayer = document.getElementById('view-video');
+        const videoSource = document.getElementById('view-video-source');
+        
+        videoSource.src = `/static/Test-${ticketId}.mp4`;
+        console.log("El ID es:", ticketId)
+        
+        videoPlayer.load();
+
+        document.getElementById('Detailed-ticket').classList.add('active');
+
+        document.getElementById('Detailed-ticket').classList.add('active');
+    }
+
+    function closeTicket() {
+        const videoPlayer = document.getElementById('view-video');
+        if (videoPlayer) {
+            videoPlayer.pause();
+            videoPlayer.currentTime = 0;
+        }
+        document.getElementById('Detailed-ticket').classList.remove('active');
+    }
+</script>
+
 </body>
 </html>

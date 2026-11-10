@@ -1,4 +1,4 @@
-#APP from https://github.com/kubracontractor
+#app.py from https://github.com/kubracontractor
 #Used as a starting point
 
 from flask import Flask, request, jsonify, render_template
@@ -8,10 +8,9 @@ from config import API_KEY
 
 app = Flask(__name__)
 
-# Create tables when app starts
 create_tables()
 
-# ─── API KEY AUTHENTICATION ───
+#API KEY AUTHENTICATION
 def require_api_key(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -34,12 +33,11 @@ def index():
 
     return render_template("index.html", tickets=tickets)
 
-# ─── CREATE A TICKET ───
+#CREATE A TICKET
 @app.route('/tickets', methods=['POST'])
 def create_ticket():
     data = request.get_json()
     
-    # Recibimos los datos que envía tu formulario HTML
     name = data.get('name')
     swing_period = data.get('swing_period')
     max_size = data.get('max_size')
@@ -59,8 +57,6 @@ def create_ticket():
     conn = get_connection()
     cursor = conn.cursor()
     
-    # NOTA: Asegúrate de que tu tabla en la base de datos tenga columnas para estos campos, 
-    # o ajústalo según la estructura que tengas creada en create_tables()
     cursor.execute('''
         INSERT INTO tickets (name, swing_period, max_size, axle_diameter, infill, walls, 
                              filament_base, filament_stands, filament_arm, filament_weight, filament_axle, creation_date)
@@ -80,7 +76,7 @@ def ticket_form():
 
 
 
-# ─── GET ALL TICKETS ───
+#GET ALL TICKETS 
 @app.route('/tickets', methods=['GET'])
 def get_tickets():
     conn = get_connection()
@@ -91,7 +87,7 @@ def get_tickets():
     return jsonify(tickets), 200
 
 
-# ─── GET ONE TICKET ───
+#GET ONE TICKET
 @app.route('/tickets/<int:ticket_id>', methods=['GET'])
 def get_ticket(ticket_id):
     conn = get_connection()
@@ -106,7 +102,7 @@ def get_ticket(ticket_id):
     return jsonify(dict(ticket)), 200
 
 
-# ─── UPDATE A TICKET ───
+#UPDATE A TICKET
 @app.route('/tickets/<int:ticket_id>', methods=['PUT'])
 def update_ticket(ticket_id):
     data = request.get_json()
@@ -125,7 +121,7 @@ def update_ticket(ticket_id):
     return jsonify({'message': 'Ticket updated'}), 200
 
 
-# ─── DELETE A TICKET ───
+#DELETE A TICKET
 @app.route('/tickets/<int:ticket_id>', methods=['DELETE'])
 def delete_ticket(ticket_id):
     conn = get_connection()
@@ -136,7 +132,7 @@ def delete_ticket(ticket_id):
 
     return jsonify({'message': 'Ticket deleted'}), 200
 
-# ─── ERROR HANDLERS ───
+#ERROR HANDLERS
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Resource not found'}), 404
