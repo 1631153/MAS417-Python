@@ -7,6 +7,8 @@ from functools import wraps
 from config import API_KEY
 import requests
 import math
+import os
+import json
 
 app = Flask(__name__)
 
@@ -55,6 +57,7 @@ def index():
     return render_template("index.html", tickets=tickets)
 
 #UPDATE FILAMENT WEIGHT (I had the idea, but I'm not really a mathematician, so this is made with Gemini)
+#----------------------CHANGE FOR REAL FORMULA (OTHER FILE)----------------------------
 def update_filament_weight(max_size_mm, axle_diameter_mm, infill_pct, walls_count, densidad=1.24):
     
     #Convert mm to cm to work directly in cm³ (1 cm³ * density = grams)
@@ -103,6 +106,14 @@ def create_ticket():
 
     if not name:
         return jsonify({'error': 'Name is required'}), 400
+
+    tests_dir = os.path.join(app.root_path, "json_files")
+    os.makedirs(tests_dir, exist_ok=True)
+    filename = f"ticket_{name.replace(' ', '_')}.json"
+    file_path = os.path.join(tests_dir, filename)
+
+    with open(file_path, 'w') as f:
+        json.dump(data, f, indent=4)
 
     #Calculate the filament weight consumption for each part
     weight = update_filament_weight(max_size, axle_diameter, infill, walls)
