@@ -10,6 +10,16 @@ import math
 import os
 import json
 
+from pathlib import Path
+import sys
+
+# .parent es 'subcarpeta', .parent.parent es 'proyecto' (un nivel arriba)
+base = Path(__file__).resolve().parent.parent
+MoCoJo_folder = base / "CAD+SIM" 
+sys.path.append(str(MoCoJo_folder))
+
+from parts_v2 import simulate_pendulum
+
 app = Flask(__name__)
 
 create_tables()
@@ -107,14 +117,6 @@ def create_ticket():
     if not name:
         return jsonify({'error': 'Name is required'}), 400
 
-    tests_dir = os.path.join(app.root_path, "json_files")
-    os.makedirs(tests_dir, exist_ok=True)
-    filename = f"ticket_{name.replace(' ', '_')}.json"
-    file_path = os.path.join(tests_dir, filename)
-
-    with open(file_path, 'w') as f:
-        json.dump(data, f, indent=4)
-
     #Calculate the filament weight consumption for each part
     weight = update_filament_weight(max_size, axle_diameter, infill, walls)
     spool_consume = {}
@@ -159,12 +161,19 @@ def create_ticket():
     ticket_id = cursor.lastrowid
     conn.close()
 
+    try:
+        sim_params = data.copy()
+        sim_params['order_id'] = ticket_id
+        simulate_pendulum(sim_params)
+    except Exception as e:
+        print(f"MuJoCo error: {str(e)}")
+    """
     for spool_id, grams_used in spool_consume.items():
         try:
             requests.put(f"http://localhost:7912/api/v1/spool/{spool_id}/use", json={'use_weight': round(grams_used, 2)})
         except requests.RequestException as e:
             return jsonify({'error': f'Error updating spool {spool_id}: {str(e)}'}), 500
-
+    """
     return jsonify({'message': 'Ticket created', 'id': ticket_id, 'discounted_grams': spool_consume}), 201
 
 @app.route('/ticket_form')
@@ -199,6 +208,25 @@ def get_tickets():
     tickets = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return jsonify(tickets), 200
+
+#DELETE A TICKET
+@app.route('/tickets/<int:ticket_id>', methods=['DELETE'])
+def delete_ticket(ticket_id):
+    video_path = os.path.join("static", f"Pendulum_{ticket_id}.mp4")
+
+    if os.path.exists(video_path):
+        try:
+            os.remove(video_path)
+        except Exception as e:
+            return jsonify({'error': f'Failed to delete video file: {str(e)}'}), 500
+        
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM tickets WHERE id = ?', (ticket_id,))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Ticket deleted'}), 200
 
 
 
@@ -237,16 +265,7 @@ def update_ticket(ticket_id):
     return jsonify({'message': 'Ticket updated'}), 200
 
 
-#DELETE A TICKET
-@app.route('/tickets/<int:ticket_id>', methods=['DELETE'])
-def delete_ticket(ticket_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM tickets WHERE id = ?', (ticket_id,))
-    conn.commit()
-    conn.close()
 
-    return jsonify({'message': 'Ticket deleted'}), 200
 
 #ERROR HANDLERS
 @app.errorhandler(404)

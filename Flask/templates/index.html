@@ -281,12 +281,13 @@
         const videoPlayer = document.getElementById('view-video');
         const videoSource = document.getElementById('view-video-source');
         
-        videoSource.src = `/static/Test-${ticketId}.mp4`;
+        videoSource.src = `/static/Pendulum_${ticketId}.mp4`;
         console.log("El ID es:", ticketId)
         
         videoPlayer.load();
-
-        document.getElementById('Detailed-ticket').classList.add('active');
+        videoPlayer.play().catch(error => {
+        console.log("El navegador bloqueó el autoplay o el vídeo no cargó:", error);
+    });
 
         document.getElementById('Detailed-ticket').classList.add('active');
     }
