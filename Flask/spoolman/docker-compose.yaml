@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  spoolman:
+    image: ghcr.io/donkie/spoolman:latest
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: ./data # This is where the data will be stored locally. Could also be set to for example `source: /home/pi/printer_data/spoolman`.
+        target: /home/app/.local/share/spoolman # Do NOT modify this line
+    ports:
+      - "7912:8000"
+    environment:
+      - TZ=Europe/Stockholm

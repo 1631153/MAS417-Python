@@ -1,0 +1,14 @@
+{
+    "name": "Second",
+    "swing_period": 10,
+    "max_size": 200,
+    "axle_diameter": 4,
+    "infill": 20,
+    "walls": 4,
+    "filament_base": 2,
+    "filament_stands": 6,
+    "filament_arm": 2,
+    "filament_weight": 3,
+    "filament_axle": 5,
+    "creation_date": "2026-11-17T17:05:59.476Z"
+}

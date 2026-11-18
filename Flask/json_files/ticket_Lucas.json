@@ -1,0 +1,14 @@
+{
+    "name": "Lucas",
+    "swing_period": 30,
+    "max_size": 500,
+    "axle_diameter": 7,
+    "infill": 30,
+    "walls": 3,
+    "filament_base": 2,
+    "filament_stands": 8,
+    "filament_arm": 6,
+    "filament_weight": 4,
+    "filament_axle": 3,
+    "creation_date": "2026-11-17T17:07:07.171Z"
+}

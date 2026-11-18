@@ -166,7 +166,14 @@
                 data-filament-weight="{{ ticket.filament_weight or 'N/A' }}"
                 data-filament-axle="{{ ticket.filament_axle or 'N/A' }}"
                 data-creation-date="{{ ticket.creation_date or 'N/A' }}"
-                data-status="{{ ticket.status }}">
+                data-status="{{ ticket.status }}"
+
+                data-filament-base-color="{{ ticket.filament_base_color or 'N/A' }}"
+                data-filament-stands-color="{{ ticket.filament_stands_color or 'N/A' }}"
+                data-filament-arm-color="{{ ticket.filament_arm_color or 'N/A' }}"
+                data-filament-weight-color="{{ ticket.filament_weight_color or 'N/A' }}"
+                data-filament-axle-color="{{ ticket.filament_axle_color or 'N/A' }}"
+                >
                 
                 <td>#{{ ticket.id }}</td>
                 <td>{{ ticket.name }}</td>
@@ -264,21 +271,23 @@
         document.getElementById('view-axle').textContent = elementoFila.dataset.axleDiameter;
         document.getElementById('view-infill').textContent = elementoFila.dataset.infill;
         document.getElementById('view-walls').textContent = elementoFila.dataset.walls;
-        document.getElementById('view-fbase').textContent = elementoFila.dataset.filamentBase;
-        document.getElementById('view-fstands').textContent = elementoFila.dataset.filamentStands;
-        document.getElementById('view-farm').textContent = elementoFila.dataset.filamentArm;
-        document.getElementById('view-fweight').textContent = elementoFila.dataset.filamentWeight;
-        document.getElementById('view-faxle').textContent = elementoFila.dataset.filamentAxle;
+
+        document.getElementById('view-fbase').textContent = elementoFila.dataset.filamentBaseColor;
+        document.getElementById('view-fstands').textContent = elementoFila.dataset.filamentStandsColor;
+        document.getElementById('view-farm').textContent = elementoFila.dataset.filamentArmColor;
+        document.getElementById('view-fweight').textContent = elementoFila.dataset.filamentWeightColor;
+        document.getElementById('view-faxle').textContent = elementoFila.dataset.filamentAxleColor;
 
         const videoPlayer = document.getElementById('view-video');
         const videoSource = document.getElementById('view-video-source');
         
-        videoSource.src = `/static/Test-${ticketId}.mp4`;
+        videoSource.src = `/static/Pendulum_${ticketId}.mp4`;
         console.log("El ID es:", ticketId)
         
         videoPlayer.load();
-
-        document.getElementById('Detailed-ticket').classList.add('active');
+        videoPlayer.play().catch(error => {
+        console.log("El navegador bloqueó el autoplay o el vídeo no cargó:", error);
+    });
 
         document.getElementById('Detailed-ticket').classList.add('active');
     }
