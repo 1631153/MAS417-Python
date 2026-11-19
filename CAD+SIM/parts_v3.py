@@ -74,7 +74,7 @@ class PendulumParameters:
     top_margin: float = 10.0
     base_thickness: float = 20.0
     base_width: float = 150.0
-    base_margin: float = 40.0
+    base_margin: float = 15.0
     socket_depth: float = 15.0
 
     output_dir: str = "sim_model"
