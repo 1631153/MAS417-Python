@@ -79,6 +79,8 @@ class PendulumParameters:
 
     output_dir: str = "sim_model"
     video_path: str = ""
+    # Simulation and render controls. Use a distinct output directory for
+    # every kit so their mesh and XML filenames do not overwrite each other. 
     colors: dict = field(default_factory=lambda: {
         "base": "1 1 0 1",
         "support_R": "1 0 0 1",
@@ -88,7 +90,7 @@ class PendulumParameters:
         "spacer_L": "1 0 0 1",
         "arm": "1 0 0 1",
         "weight": "0 0 1 1",
-    })
+    })# dict of RGBA strings for each part; default is all red except weight blue
 
     initial_angle_rad: float = math.pi / 0.9
     simulation_duration: float = 10.0
@@ -104,7 +106,11 @@ class PendulumParameters:
 
 
 class PendulumKit:
-    """Build and simulate one pendulum kit."""
+    """Build and simulate one pendulum kit.
+
+    Create a separate instance and output directory for each parameter set.
+    After running, the selected period is available as ``kit.period_to_show``. 
+    """
 
     def __init__(self, parameters=None):
         self.parameters = parameters or PendulumParameters()
@@ -124,9 +130,12 @@ class PendulumKit:
         return properties
 
     def build(self):
+        # Build the pendulum kit parts and calculate their mass properties. 
         p = self.parameters
+        # A rebuild changes the geometry, so any previous XML export is stale. 
         self.exported = False
 
+        # Derive hole sizes and related dimensions from the user inputs.
         wall_thickness = p.wall_loops * p.line_width
         arm_hole = p.axle_diameter + p.arm_clearance
         hub_diameter = arm_hole + 2 * p.hub_wall
@@ -135,6 +144,8 @@ class PendulumKit:
         socket_y = p.beam_width + p.fit
         weight_top = -p.arm_length + p.slot_depth
 
+        # Build the pendulum in its own frame: pivot at the origin, axle on X,
+        # and the arm extending down the negative Z axis. 
         bar = cq.Workplane("XY").box(
             p.arm_thickness, p.arm_width, p.arm_length
         ).translate((0, 0, -p.arm_length / 2))
@@ -148,6 +159,7 @@ class PendulumKit:
             .hole(arm_hole)
         )
 
+        # The weight pocket opens from the top and stops at the arm's lower end.
         weight = (
             cq.Workplane("XY")
             .box(p.weight_thickness, p.weight_width, p.weight_height)
@@ -157,6 +169,8 @@ class PendulumKit:
             .cutBlind(-p.slot_depth)
         )
 
+        # Size the supports around the actual swinging assembly. The farthest
+        # Y/Z corner must clear the base through a full swing. 
         bounds = cq.Compound.makeCompound([arm.val(), weight.val()]).BoundingBox()
         far_y = max(abs(bounds.ymin), abs(bounds.ymax))
         max_swing_radius = math.sqrt(bounds.zmin ** 2 + far_y ** 2)
@@ -164,12 +178,14 @@ class PendulumKit:
         half_x = max(abs(bounds.xmin), abs(bounds.xmax))
         beam_center_x = half_x + p.gap + p.beam_thickness / 2
 
+        # Convert the pivot height above the plate into the plate's Z frame. 
         pivot_z = p.base_thickness / 2 + pivot_height
         beam_height = p.socket_depth + pivot_height + p.top_margin
         base_length = 2 * (
             beam_center_x + p.beam_thickness / 2 + p.base_margin
         )
 
+        # Cut two beam sockets into the base, symmetric about the axle centre.
         plate = (
             cq.Workplane("XY").box(base_length, p.base_width, p.base_thickness)
             .faces(">Z").workplane(centerOption="ProjectedOrigin")
@@ -178,6 +194,8 @@ class PendulumKit:
             .cutBlind(-p.socket_depth)
         )
 
+        # Supports are modelled around the pivot origin; their lower ends
+        # extend into the base sockets when assembled. 
         support = (
             cq.Workplane("XY").box(p.beam_thickness, p.beam_width, beam_height)
             .translate((0, 0, p.top_margin - beam_height / 2))
@@ -193,6 +211,8 @@ class PendulumKit:
             .translate((-axle_length / 2, 0, 0))
         )
 
+        # Split the available gap evenly between the two spacers, allowing
+        # for the arm thickness and the requested axial play. 
         opening = 2 * (beam_center_x - p.beam_thickness / 2)
         spacer_length = (opening - p.arm_thickness - p.spacer_play) / 2
         spacer = (
@@ -205,6 +225,8 @@ class PendulumKit:
             "base": plate, "support": support, "arm": arm,
             "weight": weight, "axle": axle, "spacer": spacer,
         }
+        # Shelling inward gives the solid outer walls; the remaining volume is
+        # the region whose effective density is reduced by the infill setting. 
         self.walls = {
             name: part.shell(-wall_thickness)
             for name, part in self.parts.items()
@@ -214,15 +236,16 @@ class PendulumKit:
             for name, part in self.parts.items()
         }
 
+        # Combine wall and core mass properties using density in g/mm^3. 
         self.properties = {}
         self.summary = {}
         for name in self.parts:
-            rho = p.density[p.filament[name]] * 1e-3
+            density = p.density[p.filament[name]] * 1e-3
             properties = GProp_GProps()
-            properties.Add(self._geometry_properties(self.walls[name]), rho)
+            properties.Add(self._geometry_properties(self.walls[name]), density)
             properties.Add(
                 self._geometry_properties(self.core[name]),
-                rho * p.infill[name],
+                density * p.infill[name],
             )
             self.properties[name] = properties
 
@@ -249,6 +272,8 @@ class PendulumKit:
         )
         self.filament_use = filament_use
 
+        # Keep assembly placements (in the plate frame) separate from the
+        # pivot-frame meshes written for MuJoCo. 
         spacer_x = p.arm_thickness / 2 + p.spacer_play / 2
         self.assembly = {
             "plate": plate,
@@ -286,6 +311,7 @@ class PendulumKit:
             "weight": weight,
         }
 
+        # Report the overall height against the configured print/kit limit.
         total_height = self.dimensions["total_height"]
         print(
             f"h_pivot = {pivot_height:.2f} mm   "
@@ -303,19 +329,24 @@ class PendulumKit:
         return self
 
     def export(self):
+        # Write the pendulum meshes to STL files and create a MuJoCo XML file for simulation.
         if not self.built:
             self.build()
 
         p = self.parameters
+        # MuJoCo resolves the STL filenames relative to the XML's meshdir. 
         output_dir = Path(p.output_dir)
         meshes_dir = output_dir / "meshes"
         meshes_dir.mkdir(parents=True, exist_ok=True)
 
+        #Export 3mf-files for 3D printing.
         for name, workplane in self.meshes.items():
             cq.exporters.export(workplane, str(meshes_dir / f"{name}.stl"))
         for name, workplane in self.meshes.items():
             cq.exporters.export(workplane, str(meshes_dir / f"{name}.3mf"))
 
+        # The arm and weight form one moving body. Convert CAD units (g, mm)
+        # to MuJoCo units (kg, m) for mass, centre of mass, and inertia. 
         swing = GProp_GProps()
         swing.Add(self.properties["arm"])
         swing.Add(self.properties["weight"])
@@ -332,6 +363,8 @@ class PendulumKit:
         )
 
         colors = p.colors
+        # Create XML asset and geometry entries from the same mesh-name map
+        # used above when writing the STL files. 
         assets = "\n".join(
             f'    <mesh name="{name}" file="{name}.stl" '
             'scale="0.001 0.001 0.001"/>'
@@ -343,11 +376,14 @@ class PendulumKit:
             if name not in ("arm", "weight")
         )
 
+        # Approximate camera distance from arm length to keep different-sized
+        # designs framed similarly in the rendered video. 
         length = p.arm_length
         distance = 1 / 320 * (length - 220) + 1
         camera_coordinates = (
             f"{0.5 * distance} {-0.5 * distance} {-0.05 * distance}"
         )
+        # Aim the camera towards the origin, with X/Y axes in the image plane and Z pointing up. Angled at 45 degrees.
         camera = (
             f'  <camera name="cam" pos="{camera_coordinates}" '
             'xyaxes="1 1 0  0 0 1"/>'
@@ -380,6 +416,7 @@ class PendulumKit:
         return self.xml_path
 
     def simulate(self):
+        # Run the MuJoCo simulation and render a video of the pendulum's motion.
         if not self.exported:
             self.export()
 
@@ -388,6 +425,8 @@ class PendulumKit:
         import matplotlib.pyplot as plt
 
         p = self.parameters
+        # Initialize the hinge angle and collect values/frames as the model
+        # advances through the configured simulation duration. 
         model = mujoco.MjModel.from_xml_path(str(self.xml_path))
         data = mujoco.MjData(model)
         data.qpos[0] = p.initial_angle_rad
@@ -401,6 +440,9 @@ class PendulumKit:
         angular_velocities = []
         frames = []
         mass_kg = model.body_mass[model.body("pendulum").id]
+        # Apply Coulomb friction and velocity-proportional damping as a hinge
+        # torque. Render only when enough simulation time has elapsed for the
+        # next output frame at the requested FPS. 
         friction = p.friction_factor * mass_kg
         damping = p.damping_factor * mass_kg
         try:
@@ -419,6 +461,7 @@ class PendulumKit:
         finally:
             renderer.close()
 
+        # MuJoCo renders RGB images; OpenCV's VideoWriter expects BGR images.
         video_path = Path(
             p.video_path or f"Pendulum_{p.order_id}.mp4"
         )
@@ -435,6 +478,8 @@ class PendulumKit:
         finally:
             video.release()
 
+        # A local maximum marks one positive-angle peak. Consecutive peaks
+        # estimate the period; discard very short intervals as numerical noise. 
         peak_times = [
             times[i]
             for i in range(1, len(angles) - 1)
@@ -527,6 +572,7 @@ def _resolve_filament_config(params: dict) -> tuple[dict[str, str], dict[str, fl
 
     return filament, density
 
+
 def _resolve_colors(params: dict) -> dict[str, str]:
     filamentC = {
             1 : "1 0 0 1", #red
@@ -558,6 +604,13 @@ def _resolve_colors(params: dict) -> dict[str, str]:
         }
 
 
+def _run_kit(parameters: PendulumParameters):
+    """Build and simulate one kit, returning its period and filament use."""
+    kit = PendulumKit(parameters)
+    periods = kit.run()
+    return periods, kit.period_to_show, kit.summary, kit.delta, kit.filament_use
+
+
 def simulate_pendulum(params: dict | None = None):
     params = params or {}
     order_id = str(params.get("order_id", "123456"))
@@ -575,28 +628,80 @@ def simulate_pendulum(params: dict | None = None):
     )
     target_period = float(raw_target) if raw_target not in (None, "") else None
 
-    pend_params = PendulumParameters(
-        arm_length=float(params.get("arm_length", 120.0)),
-        axle_diameter=float(params.get("axle_diameter", 5.0)),
-        max_height=float(params.get("max_size", params.get("max_height", 250.0))),
-        order_id=order_id,
-        wall_loops=int(params.get("walls", params.get("wall_loops", 2))),
-        infill={
-            "base": infill_pct,
-            "support": infill_pct,
-            "arm": infill_pct,
-            "weight": 1.00,
-            "axle": 1.00,
-            "spacer": 1.00,
-        },
-        filament=filament,
-        density=density,
-        colors=colors,
-        output_dir=f"SIM_models/sim_model_{order_id}",
-        video_path=f"static/Pendulum_{order_id}.mp4",
-        target_period=target_period,
+    max_height = float(params.get("max_size", params.get("max_height", 250.0)))
+    axle_diameter = float(params.get("axle_diameter", 5.0))
+    wall_loops = int(params.get("walls", params.get("wall_loops", 2)))
+    infill_cfg = {
+        "base": infill_pct,
+        "support": infill_pct,
+        "arm": infill_pct,
+        "weight": 1.00,
+        "axle": 1.00,
+        "spacer": 1.00,
+    }
+
+    # Generate 3 arm lengths (same as in parts_v3_old) while respecting the height limit
+    if "arm_length" in params and params["arm_length"] not in (None, ""):
+        base_L = float(params["arm_length"])
+        lengths = np.linspace(max(60.0, base_L * 0.8), base_L * 1.2, 3)
+    else:
+        max_L = max(100.0, min(200.0, max_height - 50.0))
+        lengths = np.linspace(100.0, max_L, 3)
+
+    variants = ["A", "B", "C"]
+    pend_params_list = [
+        PendulumParameters(
+            arm_length=float(lengths[i]),
+            axle_diameter=axle_diameter,
+            max_height=max_height,
+            order_id=order_id,
+            wall_loops=wall_loops,
+            infill=infill_cfg,
+            filament=filament,
+            density=density,
+            colors=colors,
+            output_dir=f"SIM_models/sim_model_{order_id}{variants[i]}",
+            video_path=f"static/Pendulum_{order_id}{variants[i]}.mp4",
+            target_period=target_period,
+        )
+        for i in range(3)
+    ]
+
+    # Run the 3 simulations in parallel using multiprocessing
+    with ProcessPoolExecutor(max_workers=len(pend_params_list)) as executor:
+        results = list(executor.map(_run_kit, pend_params_list))
+
+    # Select the model with the smallest delta relative to target_period (or the central B model if no target is specified)
+    best_idx = 1
+    best_delta = float("inf")
+    for i, (_, period_to_show, _, delta, _) in enumerate(results):
+        if delta is not None and delta < best_delta:
+            best_delta = delta
+            best_idx = i
+
+    best_variant = variants[best_idx]
+    best_periods, best_period, best_summary, best_delta_val, best_filament_use = results[best_idx]
+
+    print(
+        f"Model {best_variant} selected (L={lengths[best_idx]:.1f} mm, "
+        f"Period={best_period}, Delta={best_delta_val})."
     )
 
-    kit = PendulumKit(pend_params)
-    periods = kit.run()
-    return periods, kit.summary, kit.delta
+    final_video = Path(f"static/Pendulum_{order_id}.mp4")
+    final_video.parent.mkdir(parents=True, exist_ok=True)
+    copyfile(f"static/Pendulum_{order_id}{best_variant}.mp4", str(final_video))
+
+    # Copy the 3mf files of the winning model
+    final_meshes_dir = Path(f"SIM_models/sim_model_{order_id}/meshes")
+    final_meshes_dir.mkdir(parents=True, exist_ok=True)
+    global_final_mesh = Path("Final_mesh")
+    global_final_mesh.mkdir(parents=True, exist_ok=True)
+
+    mesh_names = ["base", "support_L", "support_R", "axle", "arm", "weight", "spacer_L", "spacer_R"]
+    for mesh_name in mesh_names:
+        src_3mf = Path(f"SIM_models/sim_model_{order_id}{best_variant}/meshes/{mesh_name}.3mf")
+        if src_3mf.exists():
+            copyfile(str(src_3mf), str(final_meshes_dir / f"{mesh_name}.3mf"))
+            copyfile(str(src_3mf), str(global_final_mesh / f"{mesh_name}.3mf"))
+
+    return best_periods, best_summary, best_delta_val
