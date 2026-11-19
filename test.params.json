@@ -1,54 +1,138 @@
 {
   "order_id": "test",
-  "status": "RECEIVED",
-
+  "status": "DESIGNED",
   "order": {
-    "T_target": 0.80,
-    "H_max": 250.0,
-    "axle_d": 5.0,
-    "filaments": {"base": 1, "support": 1, "arm": 1, "weight": 2, "axle": 1, "spacer": 1}
-  },
-
-  "material": {
-    "spools": {
-      "1": {"name": "PLA Black",   "material": "PLA",  "density": 1.24, "remaining_g": 830.0},
-      "2": {"name": "PETG Orange", "material": "PETG", "density": 1.27, "remaining_g": 512.0}
+    "T_target": 0.8,
+    "H_max": 250,
+    "axle_d": 5,
+    "filaments": {
+      "base": 1,
+      "support": 1,
+      "arm": 1,
+      "weight": 2,
+      "axle": 1,
+      "spacer": 1
     }
   },
-
+  "material": {
+    "spools": {
+      "1": {
+        "name": "PLA Black",
+        "material": "PLA",
+        "density": 1.24,
+        "remaining_g": 830,
+        "color_hex": "000000"
+      },
+      "2": {
+        "name": "PETG Orange",
+        "material": "PETG",
+        "density": 1.27,
+        "remaining_g": 512,
+        "color_hex": "FF8000"
+      }
+    }
+  },
   "print": {
     "n_walls": 2,
     "line_w": 0.45,
     "layer_h": 0.2,
-    "infill": {"base": 0.20, "support": 0.20, "arm": 0.15, "weight": 1.00, "axle": 1.00, "spacer": 1.00}
+    "infill": {
+      "base": 0.2,
+      "support": 0.2,
+      "arm": 0.15,
+      "weight": 1,
+      "axle": 1,
+      "spacer": 1
+    }
   },
-
   "design": {
     "fit": 0.3,
     "support_clr": 0.3,
-    "arm_clr": 1.0,
+    "arm_clr": 1,
     "press": 0.15,
-    "gap": 3.0,
-    "c_base": 5.0,
-    "axle_overhang": 3.0,
+    "gap": 3,
+    "c_base": 5,
+    "axle_overhang": 3,
     "spacer_play": 0.5,
-    "arm":    {"t": 6.0, "w": 12.0, "hub_wall": 4.5},
-    "weight": {"slot_d": 20.0},
+    "arm": {
+      "t": 6,
+      "w": 12,
+      "hub_wall": 4.5
+    },
+    "weight": {
+      "slot_d": 20,
+      "t": 20,
+      "w": 30,
+      "h": 30
+    },
     "weight_candidates": [
-      {"t": 16.0, "w": 24.0, "h": 24.0},
-      {"t": 20.0, "w": 30.0, "h": 30.0},
-      {"t": 24.0, "w": 36.0, "h": 36.0}
+      {
+        "t": 16,
+        "w": 24,
+        "h": 24
+      },
+      {
+        "t": 20,
+        "w": 30,
+        "h": 30
+      },
+      {
+        "t": 24,
+        "w": 36,
+        "h": 36
+      }
     ],
-    "beam": {"x": 12.0, "y": 25.0, "top_mrg": 10.0},
-    "base": {"t": 20.0, "w": 150.0, "margin": 40.0, "socket_d": 15.0}
+    "beam": {
+      "x": 12,
+      "y": 25,
+      "top_mrg": 10
+    },
+    "base": {
+      "t": 20,
+      "w": 150,
+      "margin": 15,
+      "socket_d": 15
+    }
   },
-
   "solved": {
+    "method": "simulated arm lengths",
     "candidates": [
-      {"weight": {"t": 16.0, "w": 24.0, "h": 24.0}, "ok": true, "L": 181.74, "T_model": 0.800, "mass_pendulum_g": 18.36},
-      {"weight": {"t": 20.0, "w": 30.0, "h": 30.0}, "ok": true, "L": 170.85, "T_model": 0.800, "mass_pendulum_g": 29.03},
-      {"weight": {"t": 24.0, "w": 36.0, "h": 36.0}, "ok": true, "L": 164.06, "T_model": 0.800, "mass_pendulum_g": 45.38}
-    ]
+      {
+        "tag": "testA",
+        "L": 100.0,
+        "T_sim": 0.6485999999999286,
+        "total_height": 146.01801655587258,
+        "ok": true
+      },
+      {
+        "tag": "testB",
+        "L": 151.5,
+        "T_sim": 0.8484000000008045,
+        "total_height": 197.19509856959303,
+        "ok": true
+      },
+      {
+        "tag": "testC",
+        "L": 203.0,
+        "T_sim": 1.0320000000021778,
+        "total_height": 248.52751579129094,
+        "ok": true
+      }
+    ],
+    "L": 151.5
   },
-  "output": {}
+  "output": {
+    "chosen": "testB",
+    "L": 151.5,
+    "T_target": 0.8,
+    "T_sim": 0.8484000000008045,
+    "period_error": 0.06050000000100558,
+    "total_height": 197.19509856959303,
+    "filament_use_g": {
+      "1": 153.92,
+      "2": 21.1
+    },
+    "video": "C:\\Users\\david\\Documents\\Programmering prosjekt\\MAS417-Python\\Pendulum_test.mp4",
+    "3mf_dir": "C:\\Users\\david\\Documents\\Programmering prosjekt\\MAS417-Python\\Final_mesh"
+  }
 }

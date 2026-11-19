@@ -237,7 +237,7 @@ print(f"h_pivot = {h_pivot:.2f} mm   beam_cx = {beam_cx:.2f} mm   "
 print(f"total height = {total_h:.1f} mm (H_max = {H_max:.0f}): "
       f"{'OK' if total_h <= H_max else 'TOO TALL'}")
 
-show(plate, support_L, support_R, arm_asm, weight_asm, axle_asm, spacer_L, spacer_R)
+show(plate)
 
 # =====================================================================
 # 9. EXPORT TO MUJOCO  (world frame = pivot frame: origin at the axle, axle along X, Z up)
