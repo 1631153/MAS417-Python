@@ -152,7 +152,7 @@
                 <select id="filament_axle" >
                     <option value="">Select a filament...</option>
                     {% for filament in filaments %}
-                        <option value="{{ filament.id }}">{{ filament.filament.name }} ({{ filament.filament.material }}) {{ filament.color_name }} - Density: {{ filament.filament.density }}. Remaining: {{ filament.remaining_weight }}</option>
+                        <option value="{{ filament.id }}">{{ filament.filament.name }} ({{ filament.filament.material }}) {{ filament.color_name }} - Density: {{ filament.filament.density }}. Remaining: Remaining: {{ filament.remaining_weight | round(2) }}</option>
                     {% endfor %}
                 </select>
             </div>

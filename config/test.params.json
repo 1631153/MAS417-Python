@@ -1,0 +1,54 @@
+{
+  "order_id": "test",
+  "status": "RECEIVED",
+
+  "order": {
+    "T_target": 0.80,
+    "H_max": 250.0,
+    "axle_d": 5.0,
+    "filaments": {"base": 1, "support": 1, "arm": 1, "weight": 2, "axle": 1, "spacer": 1}
+  },
+
+  "material": {
+    "spools": {
+      "1": {"name": "PLA Black",   "material": "PLA",  "density": 1.24, "remaining_g": 830.0},
+      "2": {"name": "PETG Orange", "material": "PETG", "density": 1.27, "remaining_g": 512.0}
+    }
+  },
+
+  "print": {
+    "n_walls": 2,
+    "line_w": 0.45,
+    "layer_h": 0.2,
+    "infill": {"base": 0.20, "support": 0.20, "arm": 0.15, "weight": 1.00, "axle": 1.00, "spacer": 1.00}
+  },
+
+  "design": {
+    "fit": 0.3,
+    "support_clr": 0.3,
+    "arm_clr": 1.0,
+    "press": 0.15,
+    "gap": 3.0,
+    "c_base": 5.0,
+    "axle_overhang": 3.0,
+    "spacer_play": 0.5,
+    "arm":    {"t": 6.0, "w": 12.0, "hub_wall": 4.5},
+    "weight": {"slot_d": 20.0},
+    "weight_candidates": [
+      {"t": 16.0, "w": 24.0, "h": 24.0},
+      {"t": 20.0, "w": 30.0, "h": 30.0},
+      {"t": 24.0, "w": 36.0, "h": 36.0}
+    ],
+    "beam": {"x": 12.0, "y": 25.0, "top_mrg": 10.0},
+    "base": {"t": 20.0, "w": 150.0, "margin": 40.0, "socket_d": 15.0}
+  },
+
+  "solved": {
+    "candidates": [
+      {"weight": {"t": 16.0, "w": 24.0, "h": 24.0}, "ok": true, "L": 181.74, "T_model": 0.800, "mass_pendulum_g": 18.36},
+      {"weight": {"t": 20.0, "w": 30.0, "h": 30.0}, "ok": true, "L": 170.85, "T_model": 0.800, "mass_pendulum_g": 29.03},
+      {"weight": {"t": 24.0, "w": 36.0, "h": 36.0}, "ok": true, "L": 164.06, "T_model": 0.800, "mass_pendulum_g": 45.38}
+    ]
+  },
+  "output": {}
+}

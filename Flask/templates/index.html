@@ -156,6 +156,7 @@
                 data-id="{{ ticket.id }}"
                 data-name="{{ ticket.name }}"
                 data-swing-period="{{ ticket.swing_period }}"
+                data-delta="{{ ticket.delta if ticket.delta is not none else 'N/A' }}"
                 data-max-size="{{ ticket.max_size }}"
                 data-axle-diameter="{{ ticket.axle_diameter }}"
                 data-infill="{{ ticket.infill }}"
@@ -287,7 +288,7 @@
         videoPlayer.load();
         videoPlayer.play().catch(error => {
         console.log("El navegador bloqueó el autoplay o el vídeo no cargó:", error);
-    });
+        });
 
         document.getElementById('Detailed-ticket').classList.add('active');
     }
