@@ -55,7 +55,7 @@ class PendulumParameters:
     fit: float = 0.3
     support_clearance: float = 0.3
     arm_clearance: float = 1.0
-    press_fit: float = 0.15
+    press_fit: float = 0.25
     gap: float = 3.0
     base_clearance: float = 5.0
     axle_overhang: float = 3.0
