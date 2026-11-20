@@ -610,6 +610,35 @@ def _run_kit(parameters: PendulumParameters):
     periods = kit.run()
     return periods, kit.period_to_show, kit.summary, kit.delta, kit.filament_use
 
+def estimate_pendulum_summary(params: dict | None = None) -> dict[str, PartSummary]:
+    """Copy paste from the grams calculation from simulate_pendulum in order
+    to check first the available spools and THEN simulate the videos."""
+    params = params or {}
+    infill_raw = float(params.get("infill", 15.0))
+    infill_pct = infill_raw / 100.0 if infill_raw > 1.0 else infill_raw
+    filament, density = _resolve_filament_config(params)
+    max_height = float(params.get("max_size", params.get("max_height", 250.0)))
+
+    if "arm_length" in params and params["arm_length"] not in (None, ""):
+        max_arm_length = float(params["arm_length"]) * 1.2
+    else:
+        max_arm_length = max(100.0, min(200.0, max_height - 50.0))
+
+    pend_params = PendulumParameters(
+        arm_length=max_arm_length,
+        axle_diameter=float(params.get("axle_diameter", 5.0)),
+        max_height=max_height,
+        wall_loops=int(params.get("walls", params.get("wall_loops", 2))),
+        infill={
+            "base": infill_pct, "support": infill_pct, "arm": infill_pct,
+            "weight": 1.00, "axle": 1.00, "spacer": 1.00,
+        },
+        filament=filament,
+        density=density,
+    )
+    kit = PendulumKit(pend_params)
+    kit.build()
+    return kit.summary
 
 def simulate_pendulum(params: dict | None = None):
     params = params or {}

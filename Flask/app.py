@@ -4,38 +4,31 @@
 from flask import Flask, request, jsonify, render_template
 from database import get_connection, create_tables
 from functools import wraps
-from config import API_KEY
 import requests
 import math
 import os
 import json
 import shutil
+import glob
 
 from pathlib import Path
 import sys
 
-# .parent es 'subcarpeta', .parent.parent es 'proyecto' (un nivel arriba)
+# .parent is 'subfolder', .parent.parent is 'project' (one level up)
 base = Path(__file__).resolve().parent.parent
 MoCoJo_folder = base / "CAD+SIM" 
 sys.path.append(str(MoCoJo_folder))
 
-from parts_v3 import simulate_pendulum
+from parts_v3 import simulate_pendulum, estimate_pendulum_summary
+
+base2 = Path(__file__).resolve().parent.parent
+PARAMS_folder = base2 / "CAD" 
+sys.path.append(str(PARAMS_folder))
 from make_params import make_params
 
 app = Flask(__name__)
 
 create_tables()
-
-#API KEY AUTHENTICATION
-def require_api_key(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        key = request.headers.get('X-API-Key')
-        if key != API_KEY:
-            return jsonify({'error': 'Unauthorized - Invalid or missing API key'}), 401
-        return f(*args, **kwargs)
-    return decorated
-
 
 @app.route("/")
 def index():
@@ -88,7 +81,43 @@ def create_ticket():
 
     if not name:
         return jsonify({'error': 'Name is required'}), 400
-          
+
+    #Calculate the filament weight consumption for each part
+    part_spools = {
+        "base": filament_base,
+        "support": filament_stands,
+        "arm": filament_arm,
+        "weight": filament_weight,
+        "axle": filament_axle,
+        "spacer": filament_axle,
+    }
+
+    try:
+        estimated_summary = estimate_pendulum_summary(data)
+    except Exception as e:
+        return jsonify({'error': f'CAD estimation error: {str(e)}'}), 500
+
+    estimated_consume = {}
+    for part, spool_id in part_spools.items():
+        if spool_id:
+            spool_id = int(spool_id)
+            estimated_consume[spool_id] = estimated_consume.get(spool_id, 0) + estimated_summary[part].total_mass_g
+
+    #Knowing if the spool has enough filament to consume
+    for spool_id, ngrams in estimated_consume.items():
+        try:
+            res = requests.get(f"http://localhost:7912/api/v1/spool/{spool_id}")
+            if res.status_code != 200:
+                print(f"Error fetching spool {spool_id}")
+    
+            spool = res.json()
+            remaining_weight = spool.get('remaining_weight', 0)
+            if remaining_weight < ngrams:
+                return jsonify({'error': f'Not enough filament in spool {spool_id}'}), 400
+        except requests.RequestException as e:
+            return jsonify({'error': f'Error fetching spool {spool_id}: {str(e)}'}), 500
+
+    #If there is enough filament, we can save the ticket in the database and run the simulation      
     conn = get_connection()
     cursor = conn.cursor()
     
@@ -113,16 +142,6 @@ def create_ticket():
     except Exception as e:
         print(f"MuJoCo error: {str(e)}")
     
-    #Calculate the filament weight consumption for each part
-    part_spools = {
-        "base": filament_base,
-        "support": filament_stands,
-        "arm": filament_arm,
-        "weight": filament_weight,
-        "axle": filament_axle,
-        "spacer": filament_axle,
-    }
-        
     spool_consume = {}
     for part, spool_id in part_spools.items():
         if spool_id:
@@ -130,33 +149,20 @@ def create_ticket():
             grams = summary[part].total_mass_g
             spool_consume[spool_id] = spool_consume.get(spool_id, 0) + grams
         
-    #Knowing if the spool has enough filament to consume
-    for spool_id, ngrams in spool_consume.items():
-        try:
-            res = requests.get(f"http://localhost:7912/api/v1/spool/{spool_id}")
-            if res.status_code != 200:
-                return jsonify({'error': f'Failed to fetch spool {spool_id}'}), 500
     
-            spool = res.json()
-            remaining_weight = spool.get('remaining_weight', 0)
-            if remaining_weight < ngrams:
-                return jsonify({'error': f'Not enough filament in spool {spool_id}'}), 400
-        except requests.RequestException as e:
-            return jsonify({'error': f'Error fetching spool {spool_id}: {str(e)}'}), 500
-    
-
     for name, item in summary.items():
-        print(f"THE SUMMARY HAS BEEN PASSED CORRECTLY: {name}: {item.mass_g:.2f} g x {item.copies} = {item.total_mass_g:.2f} g")
+        print(f"THE SUMMARY HAS BEEN PASSED CORRECTLY: {name}: {item.mass_g} g x {item.copies} = {item.total_mass_g} g")
 
     #UNCOMMENT THIS TO UPDATE THE FILAMENTS WEIGHT
-    """
+
     for spool_id, grams_used in spool_consume.items():
         try:
-            print(f"Updating spool {spool_id} with {grams_used:.2f} grams used")
+            print(f"Updating spool {spool_id} with {grams_used} grams used")
             requests.put(f"http://localhost:7912/api/v1/spool/{spool_id}/use", json={'use_weight': round(grams_used, 2)})
         except requests.RequestException as e:
+            print(f"Error updating spool {spool_id}: {str(e)}")
             return jsonify({'error': f'Error updating spool {spool_id}: {str(e)}'}), 500
-    """
+
     return jsonify({'message': 'Ticket created', 'id': ticket_id, 'discounted_grams': spool_consume}), 201
 
 @app.route('/ticket_form')
@@ -195,13 +201,13 @@ def get_tickets():
 #DELETE A TICKET
 @app.route('/tickets/<int:ticket_id>', methods=['DELETE'])
 def delete_ticket(ticket_id):
-    video_path = os.path.join("static", f"Pendulum_{ticket_id}.mp4")
+    video_path = os.path.join("static", f"Pendulum_{ticket_id}*.mp4")
 
-    if os.path.exists(video_path):
+    for video_path in glob.glob(video_path):
         try:
             os.remove(video_path)
         except Exception as e:
-            return jsonify({'error': f'Failed to delete video file: {str(e)}'}), 500
+            print(f"Error deleting video file: {str(e)}")
 
     folder = f"sim_model_{ticket_id}"
     sim_path = os.path.join("SIM_models", folder)
@@ -209,7 +215,7 @@ def delete_ticket(ticket_id):
         try:
             shutil.rmtree(sim_path)
         except Exception as e:
-            return jsonify({'error': f'Failed to delete simulation folder: {str(e)}'}), 500
+            print(f"Error deleting simulation folder: {str(e)}")
 
     conn = get_connection()
     cursor = conn.cursor()

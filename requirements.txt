@@ -1,0 +1,8 @@
+cadquery==2.8.0
+cadquery-ocp==7.9.3.1.1
+Flask==3.0.0
+matplotlib==3.10.9
+mujoco==4.0.1
+numpy==2.4.6
+opencv-python==4.11.0.86
+requests==2.34.2
