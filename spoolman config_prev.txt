@@ -13,18 +13,3 @@ PLA+HS Filament eSUN (1kg)
 
 ABS+ - 1.75mm Black (1kg)
 (Density g/cm3 : 1.06)
-
-
-const url = "http://192.168.1.50:7912/api/v1/filament";
-
-fetch(url)
-  .then(response => {
-    if (!response.ok) throw new Error("Error HTTP: " + response.status);
-    return response.json();
-  })
-  .then(filamentos => {
-    console.log("Filamentos encontrados:", filamentos);
-  })
-  .catch(error => {
-    console.error("No se pudo conectar con Spoolman:", error);
-  });

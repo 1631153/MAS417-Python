@@ -283,11 +283,10 @@
         const videoSource = document.getElementById('view-video-source');
         
         videoSource.src = `/static/Pendulum_${ticketId}.mp4`;
-        console.log("El ID es:", ticketId)
+        console.log("ID:", ticketId)
         
         videoPlayer.load();
-        videoPlayer.play().catch(error => {
-        console.log("El navegador bloqueó el autoplay o el vídeo no cargó:", error);
+        videoPlayer.play().catch(error => { console.log("VIDEO ERROR:", error);
         });
 
         document.getElementById('Detailed-ticket').classList.add('active');

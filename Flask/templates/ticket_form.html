@@ -190,7 +190,7 @@
             window.location.href = "/";
         } else {
             const errorData = await response.json();
-            alert("Error al crear la orden: " + (errorData.message || errorData.error || "Error desconocido"));
+            alert("Error during creating the order: " + (errorData.message || errorData.error || "Unkown error"));
         }
     });
     </script>
